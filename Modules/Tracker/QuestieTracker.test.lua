@@ -428,6 +428,67 @@ describe("QuestieTracker", function()
             assert.spy(QuestieTracker.Update).was.called()
         end)
 
+        describe("unchecking a quest in Forever's quest log", function()
+            before_each(function()
+                -- The quest log already removed its native watch when the hook runs.
+                _G.C_QuestLog.GetQuestWatchType = function() return nil end
+            end)
+
+            it("should untrack the quest in the Questie Tracker by default", function()
+                QuestieTracker.OnNativeQuestWatchRemoved(91741)
+
+                assert.is_true(Questie.db.char.AutoUntrackedQuests[91741])
+                assert.spy(QuestieTracker.Update).was.called()
+            end)
+
+            it("should keep the quest in the Questie Tracker while ignoring the Blizzard tracker", function()
+                Questie.db.profile.trackerIgnoreBlizzardTracker = true
+
+                QuestieTracker.OnNativeQuestWatchRemoved(91741)
+
+                assert.is_nil(Questie.db.char.AutoUntrackedQuests[91741])
+                assert.spy(QuestieTracker.Update).was.not_called()
+            end)
+
+            it("should follow the quest log in manual tracking even when ignoring the Blizzard tracker is set", function()
+                Questie.db.profile.autoTrackQuests = false
+                Questie.db.profile.trackerIgnoreBlizzardTracker = true
+                Questie.db.char.TrackedQuests[91741] = true
+
+                QuestieTracker.OnNativeQuestWatchRemoved(91741)
+
+                assert.is_nil(Questie.db.char.TrackedQuests[91741])
+            end)
+
+            it("should still untrack from the Questie Tracker's own menu while ignoring the Blizzard tracker", function()
+                Questie.db.profile.trackerIgnoreBlizzardTracker = true
+                _G.C_QuestLog.GetQuestWatchType = function() return 1 end
+
+                QuestieTracker:UntrackQuestId(91741)
+
+                assert.is_true(Questie.db.char.AutoUntrackedQuests[91741])
+                assert.spy(_G.C_QuestLog.RemoveQuestWatch).was.called_with(91741)
+            end)
+        end)
+
+        describe("IsIgnoringBlizzardTracker", function()
+            it("should only ignore the Blizzard tracker on Forever with auto tracking and the setting enabled", function()
+                Questie.db.profile.trackerIgnoreBlizzardTracker = true
+                assert.is_true(QuestieTracker.IsIgnoringBlizzardTracker())
+
+                Questie.IsForever = false
+                assert.is_false(QuestieTracker.IsIgnoringBlizzardTracker())
+
+                Questie.IsForever = true
+                Questie.db.profile.autoTrackQuests = false
+                assert.is_false(QuestieTracker.IsIgnoringBlizzardTracker())
+
+                Questie.db.profile.autoTrackQuests = true
+                Questie.db.profile.trackerIgnoreBlizzardTracker = false
+                assert.is_false(QuestieTracker.IsIgnoringBlizzardTracker())
+            end)
+        end)
+
         it("passes refreshed data to text-only updates", function()
             local pool = QuestieLoader:ImportModule("TrackerLinePool")
             pool.UpdateQuestLines = spy.new(function() end)

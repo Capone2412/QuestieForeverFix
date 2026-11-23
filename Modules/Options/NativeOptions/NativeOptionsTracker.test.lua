@@ -166,6 +166,68 @@ describe("native tracker options", function()
         assert.spy(compat.QuestLog_Update).was.not_called()
     end)
 
+    describe("ignore Blizzard tracker", function()
+        local originalForever
+
+        before_each(function()
+            originalForever = Questie.IsForever
+        end)
+
+        after_each(function()
+            Questie.IsForever = originalForever
+        end)
+
+        it("should be listed after Auto Track Quests and Show Quest Level", function()
+            local items = LoadTab().group_quests.items
+
+            assert.is_true(items.autoTrackQuests.order < items.ignoreBlizzardTracker.order)
+            assert.is_true(items.showQuestLevels.order < items.ignoreBlizzardTracker.order)
+            assert.is_true(items.ignoreBlizzardTracker.order < items.listAchievementsFirst.order)
+        end)
+
+        it("should only be visible on Forever, whose quest log keeps its own watch limit", function()
+            Questie.IsForever = false
+            local visibleOnClassic = LoadTab().group_quests.items.ignoreBlizzardTracker.visible
+            Questie.IsForever = true
+            local visibleOnForever = LoadTab().group_quests.items.ignoreBlizzardTracker.visible
+
+            assert.is_false(visibleOnClassic)
+            assert.is_true(visibleOnForever)
+        end)
+
+        it("should only be enabled while Auto Track Quests is enabled", function()
+            Questie.db.profile.trackerEnabled = true
+            local option = LoadTab().group_quests.items.ignoreBlizzardTracker
+
+            Questie.db.profile.autoTrackQuests = true
+            assert.is_true(option.enabled())
+            Questie.db.profile.autoTrackQuests = false
+            assert.is_false(option.enabled())
+        end)
+
+        it("should track quests unchecked in the Blizzard quest log again when enabled", function()
+            Questie.db.char.AutoUntrackedQuests = {[91741] = true}
+
+            LoadTab().group_quests.items.ignoreBlizzardTracker.set(nil, true)
+
+            assert.is_true(Questie.db.profile.trackerIgnoreBlizzardTracker)
+            assert.are.same({}, Questie.db.char.AutoUntrackedQuests)
+            assert.spy(tracker.Update).was.called_with(tracker)
+            assert.spy(visibility.ScheduleSnapshot).was.called_with(visibility, "IGNORE_BLIZZARD_TRACKER")
+        end)
+
+        it("should keep untracked quests untracked when disabled", function()
+            Questie.db.profile.trackerIgnoreBlizzardTracker = true
+            Questie.db.char.AutoUntrackedQuests = {[91741] = true}
+
+            LoadTab().group_quests.items.ignoreBlizzardTracker.set(nil, false)
+
+            assert.is_false(Questie.db.profile.trackerIgnoreBlizzardTracker)
+            assert.is_true(Questie.db.char.AutoUntrackedQuests[91741])
+            assert.spy(tracker.Update).was.called_with(tracker)
+        end)
+    end)
+
     -- Quest-log checks skip unchanged quests, so this setting must request the quest lines itself.
     it("lays out the tracker when always showing it expands a minimized tracker", function()
         Questie.db.char.isTrackerExpanded = false

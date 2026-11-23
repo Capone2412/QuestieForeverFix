@@ -176,6 +176,26 @@ function QuestieOptionsEngine.tabs.tracker:Initialize()
                             QuestieTracker:Update()
                         end,
                     },
+                    ignoreBlizzardTracker = {
+                        type = "checkbox",
+                        order = 3,
+                        title = "Ignore Blizzard Tracker",
+                        tooltip = "If checked, the Questie Tracker shows all Quests in your Quest Log, no matter which Quests are checked in the Blizzard Quest Log. Unchecking a Quest there no longer removes it from the Questie Tracker, so the Blizzard limit of tracked Quests does not apply to the Questie Tracker. Use \"Untrack Quest\" in the Questie Tracker to hide a single Quest.\n\nNOTE: This setting only works when \"Auto Track Quests\" is enabled.",
+                        width = "half",
+                        -- Only Forever's quest log keeps its own watches with a limit; other clients show Questie's tracking there.
+                        visible = Questie.IsForever == true,
+                        enabled = function() return Questie.db.profile.trackerEnabled and Questie.db.profile.autoTrackQuests end,
+                        get = function() return Questie.db.profile.trackerIgnoreBlizzardTracker end,
+                        set = function(_, value)
+                            Questie.db.profile.trackerIgnoreBlizzardTracker = value
+                            if value then
+                                -- Quests unchecked in the Blizzard Quest Log before are tracked again.
+                                Questie.db.char.AutoUntrackedQuests = {}
+                            end
+                            CommsVisibility:ScheduleSnapshot("IGNORE_BLIZZARD_TRACKER")
+                            QuestieTracker:Update()
+                        end,
+                    },
                     listAchievementsFirst = {
                         type = "checkbox",
                         order = 4,

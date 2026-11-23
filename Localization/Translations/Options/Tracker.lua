@@ -102,6 +102,31 @@ local trackerOptionsLocales = {
         ["zhTW"] = "啟用時，任務清單中的任務標題將會顯示任務等級",
     },
     ---------------------------------------------------------
+    ["Ignore Blizzard Tracker"] = {
+        ["enUS"] = true,
+        ["deDE"] = "Blizzard-Tracker ignorieren",
+        ["esES"] = false,
+        ["esMX"] = false,
+        ["frFR"] = false,
+        ["koKR"] = false,
+        ["ptBR"] = false,
+        ["ruRU"] = false,
+        ["zhCN"] = false,
+        ["zhTW"] = false,
+    },
+    ["If checked, the Questie Tracker shows all Quests in your Quest Log, no matter which Quests are checked in the Blizzard Quest Log. Unchecking a Quest there no longer removes it from the Questie Tracker, so the Blizzard limit of tracked Quests does not apply to the Questie Tracker. Use \"Untrack Quest\" in the Questie Tracker to hide a single Quest.\n\nNOTE: This setting only works when \"Auto Track Quests\" is enabled."] = {
+        ["enUS"] = true,
+        ["deDE"] = "Wenn diese Option aktiviert ist, zeigt der Questie-Tracker alle Quests deines Questlogs an, unabhängig davon, welche Quests im Blizzard-Questlog angehakt sind. Wird dort ein Haken entfernt, verschwindet die Quest nicht mehr aus dem Questie-Tracker. Das Blizzard-Limit für verfolgte Quests gilt damit nicht für den Questie-Tracker. Mit \"Quest nicht mehr verfolgen\" im Questie-Tracker lässt sich eine einzelne Quest ausblenden.\n\nHINWEIS: Diese Einstellung funktioniert nur, wenn \"Quests automatisch verfolgen\" aktiviert ist.",
+        ["esES"] = false,
+        ["esMX"] = false,
+        ["frFR"] = false,
+        ["koKR"] = false,
+        ["ptBR"] = false,
+        ["ruRU"] = false,
+        ["zhCN"] = false,
+        ["zhTW"] = false,
+    },
+    ---------------------------------------------------------
     ["Auto Minimize Completed Quests"] = {
         ["enUS"] = true,
         ["deDE"] = "Abgeschlossene Quests automatisch minimieren",

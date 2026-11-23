@@ -341,6 +341,10 @@ local migrationFunctions = {
         -- The Isle of Quel'Danas phase lives in the global scope; this profile copy was never read by the phase logic
         Questie.db.profile.isleOfQuelDanasPhase = nil
     end,
+    [56] = function()
+        -- New setting: Blizzard quest log watch changes keep untracking quests in the Questie Tracker by default
+        Questie.db.profile.trackerIgnoreBlizzardTracker = false
+    end,
 }
 
 function Migration:Migrate()

@@ -1220,6 +1220,31 @@ function QuestieTracker.GetNumTrackedQuests()
     end
 end
 
+---Only Forever keeps Blizzard's quest watches next to Questie's tracking, so only there can Blizzard's watch limit
+---keep quests out of the Questie Tracker. Other clients show Questie's own tracking state in the quest log instead
+---(see the IsQuestWatched shim in HookBaseTracker). Manual tracking has no way to add quests other than the
+---quest log, so the setting needs Auto Track Quests.
+---@return boolean @true if unchecking a quest in the Blizzard quest log must not untrack it in the Questie Tracker
+function QuestieTracker.IsIgnoringBlizzardTracker()
+    return (Questie.IsForever and Questie.db.profile.autoTrackQuests and Questie.db.profile.trackerIgnoreBlizzardTracker) and true or false
+end
+
+---Forever's quest log calls C_QuestLog.RemoveQuestWatch with a quest ID when a quest is unchecked.
+---@param questId QuestId
+function QuestieTracker.OnNativeQuestWatchRemoved(questId)
+    if QuestieTracker.disableHooks or (not Questie.db.profile.trackerEnabled) or QuestieTracker.IsIgnoringBlizzardTracker() then
+        return
+    end
+    -- Questie's own untrack path updates its state before removing the native watch.
+    -- Only process a native removal if it still changes Questie's state, avoiding recursion.
+    local autoTrack = Questie.db.profile.autoTrackQuests
+    local isTracked = (autoTrack and not Questie.db.char.AutoUntrackedQuests[questId])
+        or (not autoTrack and Questie.db.char.TrackedQuests[questId])
+    if isTracked and C_QuestLog.GetQuestWatchType(questId) == nil then
+        QuestieTracker:UntrackQuestId(questId)
+    end
+end
+
 function QuestieTracker:Unhook()
     if (not QuestieTracker.alreadyHooked) then
         return
@@ -1266,19 +1291,7 @@ function QuestieTracker:HookBaseTracker()
                     QuestieTracker:AQW_Insert(QuestieCompat.GetQuestLogIndexByID(questId), QUEST_WATCH_NO_EXPIRE)
                 end
             end)
-            hooksecurefunc(C_QuestLog, "RemoveQuestWatch", function(questId)
-                if QuestieTracker.disableHooks or not Questie.db.profile.trackerEnabled then
-                    return
-                end
-                -- Questie's own untrack path updates its state before removing the native watch.
-                -- Only process a native removal if it still changes Questie's state, avoiding recursion.
-                local autoTrack = Questie.db.profile.autoTrackQuests
-                local isTracked = (autoTrack and not Questie.db.char.AutoUntrackedQuests[questId])
-                    or (not autoTrack and Questie.db.char.TrackedQuests[questId])
-                if isTracked and C_QuestLog.GetQuestWatchType(questId) == nil then
-                    QuestieTracker:UntrackQuestId(questId)
-                end
-            end)
+            hooksecurefunc(C_QuestLog, "RemoveQuestWatch", QuestieTracker.OnNativeQuestWatchRemoved)
         else
             if AutoQuestWatch_Insert then
                 hooksecurefunc("AutoQuestWatch_Insert", function(index, watchTimer) QuestieTracker:AQW_Insert(index, watchTimer) end)
